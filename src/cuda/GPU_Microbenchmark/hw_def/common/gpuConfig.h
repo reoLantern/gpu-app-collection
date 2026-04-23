@@ -310,7 +310,7 @@ inline unsigned initializeDeviceProp(unsigned deviceID, int argc, char *argv[])
 
         // memory
         config.MEM_SIZE = deviceProp.totalGlobalMem;
-        config.MEM_CLK_FREQUENCY = deviceProp.memoryClockRate * 1e-3f;
+        { int _memClkKHz = 0; cudaDeviceGetAttribute(&_memClkKHz, cudaDevAttrMemoryClockRate, deviceID); config.MEM_CLK_FREQUENCY = _memClkKHz * 1e-3f; }
         config.MEM_BITWIDTH = deviceProp.memoryBusWidth;
         config.CLK_FREQUENCY = clockRateKHz * 1e-3f;
 
