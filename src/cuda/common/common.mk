@@ -155,7 +155,7 @@ endif
 
 # Compiler-specific flags (by default, we always use sm_10, sm_20, and sm_30), unless we use the SMVERSION template
 
-GENCODE_SM70 ?= -gencode=arch=compute_70,code=\"sm_70,compute_70\"
+GENCODE_SM70 ?=
 GENCODE_SM75 ?= -gencode=arch=compute_75,code=\"sm_75,compute_75\"
 
 CXXFLAGS  += $(CXXWARN_FLAGS) $(CXX_ARCH_FLAGS)
