@@ -178,7 +178,7 @@ int main(int argc, char** argv)
  checkCudaErrors(cudaEventElapsedTime(&elapsedTime, start, stop));  
  printf("execution time = %.2f s\n", elapsedTime/1000);  
  getLastCudaError("kernel launch failure");              
- cudaThreadSynchronize(); 
+ cudaDeviceSynchronize(); 
 
  // Copy result from device memory to host memory
  // h_B contains the result in host memory

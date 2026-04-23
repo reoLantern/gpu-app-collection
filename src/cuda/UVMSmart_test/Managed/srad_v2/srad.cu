@@ -148,7 +148,7 @@ runTest( int argc, char** argv)
 
 	}
 
-    cudaThreadSynchronize();
+    cudaDeviceSynchronize();
 
 #define OUTPUT
 

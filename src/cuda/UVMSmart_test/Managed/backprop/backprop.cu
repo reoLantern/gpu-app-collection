@@ -589,7 +589,7 @@ void bpnn_train_cuda(BPNN *net, float *eo, float *eh)
 #endif
 
 
-  cudaThreadSynchronize();
+  cudaDeviceSynchronize();
   
   cudaDeviceSynchronize();
   cudaError_t error = cudaGetLastError();
