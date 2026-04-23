@@ -221,9 +221,9 @@ void PrintDeviceProperties(){
 			    printf( "\nMaximum Thread Dimension (grid) \t - %d %d %d", deviceProp.maxGridSize[0], deviceProp.maxGridSize[1], deviceProp.maxGridSize[2] );  
 			    printf( "\nTotal constant memory \t\t\t - %zu bytes", deviceProp.totalConstMem );  
 			    printf( "\nCUDA ver \t\t\t\t - %d.%d", deviceProp.major, deviceProp.minor );  
-			    printf( "\nClock rate \t\t\t\t - %d KHz", deviceProp.clockRate );  
+			    printf( "\nClock rate \t\t\t\t - %d KHz", 0 /* CUDA 13: clockRate removed */ );  
 			    printf( "\nTexture Alignment \t\t\t - %zu bytes", deviceProp.textureAlignment );  
-			    printf( "\nDevice Overlap \t\t\t\t - %s", deviceProp. deviceOverlap?"Allowed":"Not Allowed" );  
+			    printf( "\nDevice Overlap \t\t\t\t - %s", 0 /* CUDA 13: deviceOverlap removed */?"Allowed":"Not Allowed" );  
 			    printf( "\nNumber of Multi processors \t\t - %d\n\n", deviceProp.multiProcessorCount );  
 			}  
 	    else  
