@@ -40,7 +40,7 @@ int main(int argc, char **argv) {
 
     // core
     printf("  GPU Max Clock rate                             : %.0f MHz \n",
-           deviceProp.clockRate * 1e-3f);
+           ({int _c=0;cudaDeviceGetAttribute(&_c,cudaDevAttrClockRate,0);_c;}) * 1e-3f);
     printf("  Multiprocessors Count                       : %d\n",
            deviceProp.multiProcessorCount);
     printf("  Maximum number of threads per multiprocessor: %d\n",
@@ -81,7 +81,7 @@ int main(int argc, char **argv) {
              static_cast<float>(deviceProp.totalGlobalMem / 1073741824.0f));
     printf("%s", msg);
     printf("  Memory Clock rate                           : %.0f Mhz\n",
-           deviceProp.memoryClockRate * 1e-3f);
+           ({int _m=0;cudaDeviceGetAttribute(&_m,cudaDevAttrMemoryClockRate,0);_m;}) * 1e-3f);
     printf("  Memory Bus Width                            : %d bit\n",
            deviceProp.memoryBusWidth);
 
