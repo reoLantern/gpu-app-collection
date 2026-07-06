@@ -463,6 +463,21 @@ cutlass_examples_turing:
 	echo $(BINDIR)
 	cp cuda/cutlass-bench/build/examples/09_turing_tensorop_conv2dfprop/09_turing_tensorop_conv2dfprop $(BINDIR)/$(BINSUBDIR)/turing_tensorop_conv2dfrop
 
+# Turing (2070S, sm_75) cutlass subset. The datacenter `cutlass` target builds sm_80/90/90a
+# examples + profiler; on 2070S only 05_batched_gemm (SIMT) and 07_volta_tensorop_gemm actually
+# RUN -- all ampere/hopper examples compile but exit at runtime with "requires compute capability
+# >= 80/90". CUTLASS is pinned via the cutlass-bench submodule (.gitmodules); clone on-demand.
+cutlass_sm75:
+	mkdir -p $(BINDIR)/$(BINSUBDIR)/
+	cd cuda && if [ ! -d "cutlass-bench/include" ]; then \
+		git clone https://github.com/NVIDIA/cutlass.git cutlass-bench && \
+		( cd cutlass-bench && git checkout e51efbfe18fe4f4cbb66ab814c55bf4aa0185491 ); \
+	fi
+	$(SETENV) cmake -S cuda/cutlass-bench -B cuda/cutlass-bench/build_sm75 -DCUTLASS_NVCC_ARCHS=75 -DCUTLASS_ENABLE_TESTS=OFF -DCUTLASS_ENABLE_LIBRARY=OFF -DCMAKE_CUDA_COMPILER=$(CUDA_INSTALL_PATH)/bin/nvcc
+	$(SETENV) $(MAKE) -C cuda/cutlass-bench/build_sm75 05_batched_gemm 07_volta_tensorop_gemm
+	cp cuda/cutlass-bench/build_sm75/examples/05_batched_gemm/05_batched_gemm $(BINDIR)/$(BINSUBDIR)/cutlass_05_batched_gemm
+	cp cuda/cutlass-bench/build_sm75/examples/07_volta_tensorop_gemm/07_volta_tensorop_gemm $(BINDIR)/$(BINSUBDIR)/cutlass_07_volta_tensorop_gemm
+
 # Maybe we should use submodules for this - but I have heard a lot of horor stories about these..
 # For now - lets just clone if we don't have it and set the SHA we want.
 heterosync:
