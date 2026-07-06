@@ -44,9 +44,8 @@ typedef struct vec8b vec8b;
 /* 4-by-4 SAD computation on the device. */
 __global__ void mb_sad_calc(unsigned short*,
 			    unsigned short*,
-			    int, int);
+			    int, int, cudaTextureObject_t);
 
-/* A function to get a reference to the "ref" texture, because sharing
- * of textures between files isn't really supported. */
-texture<unsigned short, 2, cudaReadModeElementType> &get_ref(void);
+/* The reference image is bound via a cudaTextureObject_t (created in main.cu);
+ * no texture-reference accessor is declared. */
 

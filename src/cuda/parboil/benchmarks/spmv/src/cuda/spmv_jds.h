@@ -9,8 +9,7 @@
   return -1; }}
   
  
-//TEXTURE memory
-texture<float,1> tex_x_float;
+//TEXTURE memory removed for CUDA 13 (base variant reads x via a pointer arg)
 
 //constant memory
 __constant__ int jds_ptr_int[5000];

@@ -39,8 +39,9 @@
 /* A local copy of the current 4x4 block */
 __shared__ unsigned short frame_loc[THREADS_W * THREADS_H * 16];
 
-/* The part of the reference image that is in the search range */
-texture<unsigned short, 2, cudaReadModeElementType> ref;
+/* The part of the reference image that is in the search range.
+ * CUDA 13 removed texture references; it is now bound as a cudaTextureObject_t
+ * created in main.cu and passed to the kernel as an argument. */
 
 /* The local SAD array on the device.  This is an array of short ints.  It is
  * interpreted as an array of 8-byte data for global data transfers. */
@@ -62,7 +63,8 @@ extern __shared__ vec8b sad_loc_8b[];
 __global__ void mb_sad_calc(unsigned short *blk_sad,
 			    unsigned short *frame,
 			    int mb_width,
-			    int mb_height)
+			    int mb_height,
+			    cudaTextureObject_t ref)
 {
   int txy_tmp = threadIdx.x / CEIL(MAX_POS, POS_PER_THREAD);
   int ty = txy_tmp / THREADS_W;
@@ -144,28 +146,28 @@ __global__ void mb_sad_calc(unsigned short *blk_sad,
 	/* 4x4 SAD computation */
 	for(int y=0; y<4; y++) {
 	  int t;
-	  t = tex2D(ref, search_off_x, search_off_y + y);
+	  t = tex2D<unsigned short>(ref, search_off_x, search_off_y + y);
 	  sad1 += abs(t - FRAME_GET(cur_o, 0, y));
 
-	  t = tex2D(ref, search_off_x + 1, search_off_y + y);
+	  t = tex2D<unsigned short>(ref, search_off_x + 1, search_off_y + y);
 	  sad1 += abs(t - FRAME_GET(cur_o, 1, y));
 	  sad2 += abs(t - FRAME_GET(cur_o, 0, y));
 
-	  t = tex2D(ref, search_off_x + 2, search_off_y + y);
+	  t = tex2D<unsigned short>(ref, search_off_x + 2, search_off_y + y);
 	  sad1 += abs(t - FRAME_GET(cur_o, 2, y));
 	  sad2 += abs(t - FRAME_GET(cur_o, 1, y));
 	  sad3 += abs(t - FRAME_GET(cur_o, 0, y));
 
-	  t = tex2D(ref, search_off_x + 3, search_off_y + y);
+	  t = tex2D<unsigned short>(ref, search_off_x + 3, search_off_y + y);
 	  sad1 += abs(t - FRAME_GET(cur_o, 3, y));
 	  sad2 += abs(t - FRAME_GET(cur_o, 2, y));
 	  sad3 += abs(t - FRAME_GET(cur_o, 1, y));
 
-	  t = tex2D(ref, search_off_x + 4, search_off_y + y);
+	  t = tex2D<unsigned short>(ref, search_off_x + 4, search_off_y + y);
 	  sad2 += abs(t - FRAME_GET(cur_o, 3, y));
 	  sad3 += abs(t - FRAME_GET(cur_o, 2, y));
 
-	  t = tex2D(ref, search_off_x + 5, search_off_y + y);
+	  t = tex2D<unsigned short>(ref, search_off_x + 5, search_off_y + y);
 	  sad3 += abs(t - FRAME_GET(cur_o, 3, y));
 	}
 
@@ -217,7 +219,5 @@ __global__ void mb_sad_calc(unsigned short *blk_sad,
   }
 }
 
-texture<unsigned short, 2, cudaReadModeElementType> &get_ref(void)
-{
-  return ref;
-}
+/* get_ref() removed: the reference image is bound via a cudaTextureObject_t
+ * created in main.cu, so no texture-reference accessor is needed. */

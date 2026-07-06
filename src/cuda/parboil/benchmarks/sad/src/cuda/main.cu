@@ -297,7 +297,8 @@ main(int argc, char **argv)
     pb_SwitchToTimer(&timers, pb_TimerID_COPY);
     cudaMalloc((void **)&d_cur_image, image_size_bytes);
     CUDA_ERRCK
-    cudaMallocArray(&ref_ary, &get_ref().channelDesc,
+    cudaChannelFormatDesc chanDesc = cudaCreateChannelDesc<unsigned short>();
+    cudaMallocArray(&ref_ary, &chanDesc,
                     ref_image->width, ref_image->height);
     CUDA_ERRCK
 
@@ -315,7 +316,19 @@ main(int argc, char **argv)
                         ref_image->height,
                         cudaMemcpyHostToDevice);
     CUDA_ERRCK
-    cudaBindTextureToArray(get_ref(), ref_ary);
+    cudaTextureObject_t ref_tex = 0;
+    {
+      cudaResourceDesc resDesc = {};
+      resDesc.resType = cudaResourceTypeArray;
+      resDesc.res.array.array = ref_ary;
+      cudaTextureDesc texDesc = {};
+      texDesc.addressMode[0] = cudaAddressModeClamp;
+      texDesc.addressMode[1] = cudaAddressModeClamp;
+      texDesc.filterMode = cudaFilterModePoint;
+      texDesc.readMode = cudaReadModeElementType;
+      texDesc.normalizedCoords = 0;
+      cudaCreateTextureObject(&ref_tex, &resDesc, &texDesc, NULL);
+    }
     CUDA_ERRCK
 
     /* Allocate SAD data on the device */
@@ -336,7 +349,8 @@ main(int argc, char **argv)
       (d_sads,
        (unsigned short *)d_cur_image,
        image_width_macroblocks,
-       image_height_macroblocks);
+       image_height_macroblocks,
+       ref_tex);
     CUDA_ERRCK
 
     /* Run the larger-blocks kernels */
@@ -365,7 +379,7 @@ main(int argc, char **argv)
     /* Free GPU memory */
     cudaFree(d_sads);
     CUDA_ERRCK
-    cudaUnbindTexture(get_ref());
+    cudaDestroyTextureObject(ref_tex);
     CUDA_ERRCK
     cudaFreeArray(ref_ary);
     CUDA_ERRCK
