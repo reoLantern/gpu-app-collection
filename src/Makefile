@@ -506,6 +506,17 @@ cutlass_perf_test:
 	$(SETENV) $(MAKE) -C cuda/cutlass-bench/build_prof_sm75 cutlass_profiler
 	cp cuda/cutlass-bench/build_prof_sm75/tools/profiler/cutlass_profiler $(BINDIR)/$(BINSUBDIR)/cutlass_perf_test
 
+# Minimal traceable CUTLASS GEMM driver (one sgemm_nn / wmma_gemm_nn kernel per run) for Huerta's
+# cutlass input-sets. The heavy cutlass_profiler above hangs under NVBit (banner only, no pb); this
+# single-kernel driver traces fine. Args: <m> <n> <k> <mode 0=sgemm SIMT fp32 / 1=wmma Turing fp16>.
+cutlass_gemm_nn:
+	mkdir -p $(BINDIR)/$(BINSUBDIR)/
+	cd cuda && if [ ! -d "cutlass-bench/include" ]; then \
+		git clone https://github.com/NVIDIA/cutlass.git cutlass-bench && \
+		( cd cutlass-bench && git checkout e51efbfe18fe4f4cbb66ab814c55bf4aa0185491 ); \
+	fi
+	$(CUDA_INSTALL_PATH)/bin/nvcc -arch=sm_75 -std=c++17 -I cuda/cutlass-bench/include -I cuda/cutlass-bench/tools/util/include cuda/cutlass_trace/cutlass_gemm_nn.cu -o $(BINDIR)/$(BINSUBDIR)/cutlass_gemm_nn
+
 # Maybe we should use submodules for this - but I have heard a lot of horor stories about these..
 # For now - lets just clone if we don't have it and set the SHA we want.
 heterosync:

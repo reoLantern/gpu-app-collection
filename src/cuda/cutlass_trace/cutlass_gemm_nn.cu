@@ -36,7 +36,11 @@ static int run(int M, int N, int K, const char *tag) {
   cudaDeviceSynchronize();
   cudaError_t err = cudaGetLastError();
   printf("%s %dx%dx%d cutlass_status=%d cuda=%s\n", tag, M, N, K, (int)st, cudaGetErrorString(err));
+  fflush(stdout);
   cudaFree(A); cudaFree(B); cudaFree(C);
+  // Explicitly tear down the CUDA context so the NVBit tracer finalizes the trace and the process
+  // exits cleanly. Without this, CUTLASS/runtime static teardown hangs under instrumentation.
+  cudaDeviceReset();
   return st == cutlass::Status::kSuccess ? 0 : 2;
 }
 
