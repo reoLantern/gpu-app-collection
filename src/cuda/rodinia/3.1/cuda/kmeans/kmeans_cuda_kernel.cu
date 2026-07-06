@@ -11,11 +11,9 @@
 
 #define SDATA( index)      CUT_BANK_CHECKER(sdata, index)
 
-// t_features has the layout dim0[points 0-m-1]dim1[ points 0-m-1]...
-texture<float, 1, cudaReadModeElementType> t_features;
-// t_features_flipped has the layout point0[dim 0-n-1]point1[dim 0-n-1]
-texture<float, 1, cudaReadModeElementType> t_features_flipped;
-texture<float, 1, cudaReadModeElementType> t_clusters;
+// CUDA 13 removed texture references: t_features is now read through the `features`
+// kernel pointer argument with __ldg. (t_features_flipped/t_clusters were only referenced
+// by disabled reduction code / constant memory, so no accessor is needed.)
 
 
 __constant__ float c_clusters[ASSUMED_NR_CLUSTERS*34];		/* constant memory for cluster centers */
@@ -86,7 +84,7 @@ kmeansPoint(float  *features,			/* in: [npoints*nfeatures] */
 			for (j=0; j < nfeatures; j++)
 			{					
 				int addr = point_id + j*npoints;					/* appropriate index of data point */
-				float diff = (tex1Dfetch(t_features,addr) -
+				float diff = (__ldg(&features[addr]) -
 							  c_clusters[cluster_base_index + j]);	/* distance between a data point to cluster centers */
 				ans += diff*diff;									/* sum of squares */
 			}

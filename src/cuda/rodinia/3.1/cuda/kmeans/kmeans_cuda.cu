@@ -155,7 +155,7 @@ kmeansCuda(float  **feature,				/* in: [npoints][nfeatures] */
 	/* copy clusters (host to device) */
 	cudaMemcpy(clusters_d, clusters[0], nclusters*nfeatures*sizeof(float), cudaMemcpyHostToDevice);
 
-	/* set up texture */
+	#if 0  /* CUDA 13 removed texture references; feature_d is read via __ldg in the kernel */
     cudaChannelFormatDesc chDesc0 = cudaCreateChannelDesc<float>();
     t_features.filterMode = cudaFilterModePoint;   
     t_features.normalized = false;
@@ -180,8 +180,8 @@ kmeansCuda(float  **feature,				/* in: [npoints][nfeatures] */
 	if(cudaBindTexture(NULL, &t_clusters, clusters_d, &chDesc2, nclusters*nfeatures*sizeof(float)) != CUDA_SUCCESS)
         printf("Couldn't bind clusters array to texture!\n");
 
-	/* copy clusters to constant memory */
-	cudaMemcpyToSymbol("c_clusters",clusters[0],nclusters*nfeatures*sizeof(float),0,cudaMemcpyHostToDevice);
+	#endif
+	cudaMemcpyToSymbol(c_clusters,clusters[0],nclusters*nfeatures*sizeof(float),0,cudaMemcpyHostToDevice);
 
 
     /* setup execution parameters.
