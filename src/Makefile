@@ -490,6 +490,22 @@ cutlass_sm75:
 	cp cuda/cutlass-bench/build_sm75/examples/05_batched_gemm/05_batched_gemm $(BINDIR)/$(BINSUBDIR)/cutlass_05_batched_gemm
 	cp cuda/cutlass-bench/build_sm75/examples/07_volta_tensorop_gemm/07_volta_tensorop_gemm $(BINDIR)/$(BINSUBDIR)/cutlass_07_volta_tensorop_gemm
 
+# Huerta cutlass_perf_test = modern CUTLASS 4.1.0 profiler restricted to SIMT sgemm + Turing
+# tensorop h1688gemm (Huerta's sgemm_nn + wmma_gemm_nn) for sm_75, registered as cutlass_perf_test.
+# CUTLASS_LIBRARY_KERNELS restriction keeps the profiler-library build tractable (~456 instances).
+# Needs CUDA_INSTALL_PATH set. The old cutlass_perf_test (Huerta's CUDA 12.8 CUTLASS) won't build on
+# CUDA 13; this modern profiler runs equivalent sgemm_nn/wmma_gemm_nn at the same m/n/k (fidelity:
+# not per-kernel identical SASS to Huerta's old CUTLASS).
+cutlass_perf_test:
+	mkdir -p $(BINDIR)/$(BINSUBDIR)/
+	cd cuda && if [ ! -d "cutlass-bench/include" ]; then \
+		git clone https://github.com/NVIDIA/cutlass.git cutlass-bench && \
+		( cd cutlass-bench && git checkout e51efbfe18fe4f4cbb66ab814c55bf4aa0185491 ); \
+	fi
+	$(SETENV) cmake -S cuda/cutlass-bench -B cuda/cutlass-bench/build_prof_sm75 -DCUTLASS_NVCC_ARCHS=75 -DCUTLASS_ENABLE_TESTS=OFF -DCUTLASS_LIBRARY_KERNELS="cutlass_simt_sgemm_*,cutlass_tensorop_h1688gemm_*" -DCMAKE_CUDA_COMPILER=$(CUDA_INSTALL_PATH)/bin/nvcc
+	$(SETENV) $(MAKE) -C cuda/cutlass-bench/build_prof_sm75 cutlass_profiler
+	cp cuda/cutlass-bench/build_prof_sm75/tools/profiler/cutlass_profiler $(BINDIR)/$(BINSUBDIR)/cutlass_perf_test
+
 # Maybe we should use submodules for this - but I have heard a lot of horor stories about these..
 # For now - lets just clone if we don't have it and set the SHA we want.
 heterosync:
