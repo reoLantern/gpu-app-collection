@@ -13,7 +13,8 @@ cpppath = [
 	]
 cxx = ['g++']
 cxxflags = [
-	'-std=c++0x'
+	'-std=c++0x',
+	'-Wno-narrowing'
 	]
 libpath = [
 	env['ENV']['CUDA_INSTALL_PATH']+'/lib64',
@@ -69,8 +70,8 @@ env.Append(BUILDERS = {
 	action = actionCommon + ' -arch=sm_61 ',
 	src_suffix = '.cu'
 ),
-'Cuda_35' : Builder(
-	action = actionCommon + ' -arch=sm_35 ',
+'Cuda_75' : Builder(
+	action = actionCommon + ' -arch=sm_75 ',
 	src_suffix = '.cu'
 ),
 'Cuda_61_CDP' : Builder(
@@ -138,7 +139,7 @@ for app in dragon_li_src:
 				'-lcudart'
 				])
 	else:
-		buildApp = env.Cuda_35(os.path.join('bin', appname), app, 
+		buildApp = env.Cuda_75(os.path.join('bin', appname), app,
 			LIBS = [hydrazine_lib, 
 				'-lcudart'
 				])

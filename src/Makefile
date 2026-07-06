@@ -95,7 +95,7 @@ dragon-naive:
 	if [ ${CUDA_VERSION_MAJOR} -lt 8 ]; then \
 		scons sm35=1 no_debug=1 -C cuda/dragon_li; \
 	else \
-		scons sm35=1 sm61=1 no_debug=1 -C cuda/dragon_li; \
+		scons sm75=1 no_debug=1 -C cuda/dragon_li; \
 	fi
 	cp ./cuda/dragon_li/bin/$(CUDA_VERSION)/testAmr $(BINDIR)/$(BINSUBDIR)/
 	cp ./cuda/dragon_li/bin/$(CUDA_VERSION)/testBfs $(BINDIR)/$(BINSUBDIR)/
