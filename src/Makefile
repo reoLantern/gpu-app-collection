@@ -73,6 +73,19 @@ microbench:
 	$(SETENV) $(MAKE) $(MAKE_ARGS) -C cuda/microbench cuda-$(CUDA_VERSION_MAJOR)
 
 ###################################################################################################3
+# Tango DNN benchmark suite (Huerta subset: AN/CN/GRU/LSTM)
+###################################################################################################3
+tango:
+	mkdir -p $(BINDIR)/$(BINSUBDIR)/
+	cd cuda/Tango/GPU/AlexNet; $(SETENV) $(MAKE_ARGS) ./build.sh
+	cd cuda/Tango/GPU/CifarNet; $(SETENV) $(MAKE_ARGS) ./build.sh
+	cd cuda/Tango/GPU/GRU; $(SETENV) $(MAKE_ARGS) ./build.sh
+	cd cuda/Tango/GPU/LSTM; $(SETENV) $(MAKE_ARGS) ./build.sh
+
+clean_tango:
+	rm -f $(BINDIR)/$(BINSUBDIR)/Tango-*
+
+###################################################################################################3
 # For Dragon, we need to change the archs manually!  (TO DO)
 # Naive works wwith only SM_20 and above
 # Fro Dragon-cdp comilation, you need to ensure that you are using at least CUDA 5.5
