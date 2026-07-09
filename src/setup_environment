@@ -159,10 +159,10 @@ fi
 # local GPU's compute capability into TARGET_SM (override by exporting TARGET_SM before sourcing).
 # GENCODE_ARCH carries the single target-arch gencode and is threaded to every suite via MAKE_ARGS;
 # suite makefiles reference $(GENCODE_ARCH).
-if [ -z "$TARGET_SM" ]; then
+if [ -z "${TARGET_SM:-}" ]; then
     export TARGET_SM=$(nvidia-smi --query-gpu=compute_cap --format=csv,noheader 2>/dev/null | head -1 | tr -d '.')
 fi
-if [ -n "$TARGET_SM" ]; then
+if [ -n "${TARGET_SM:-}" ]; then
     export GENCODE_ARCH="-gencode=arch=compute_${TARGET_SM},code=sm_${TARGET_SM}"
     export MAKE_ARGS="$MAKE_ARGS GENCODE_ARCH=$GENCODE_ARCH"
 fi
