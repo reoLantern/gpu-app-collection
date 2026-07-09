@@ -26,12 +26,12 @@ OBJECT_FILES := $(CPP_OBJECT_FILES) $(C_OBJECT_FILES)
 # To preserve PTX in final binary: First create static library, then link to executable
 # This avoids nvlink stripping PTX during device linking
 release: $(CUDA_LIB_FILES) $(OBJECT_FILES)
-	$(CC) $(NVCC_FLAGS) $^ -o $(EXE) -L$(LIB) -lcudart --cudart shared
+	$(CC) $(GENCODE_ARCH) $(NVCC_FLAGS) $^ -o $(EXE) -L$(LIB) -lcudart --cudart shared
 	mv $(EXE) $(BIN_DIR)
 
 # Pattern rule for compiling individual .cu files to .o files
 %.a: %.cu
-	$(CC) $(NVCC_FLAGS) $(INCLUDE) $(CUOPTS) --lib $< -o $@
+	$(CC) $(GENCODE_ARCH) $(NVCC_FLAGS) $(INCLUDE) $(CUOPTS) --lib $< -o $@
 
 %.o: %.cpp
 	$(CC) $(NVCC_FLAGS) $(INCLUDE) $(CUOPTS) -dc $< -o $@
@@ -40,7 +40,7 @@ release: $(CUDA_LIB_FILES) $(OBJECT_FILES)
 	$(CC) $(NVCC_FLAGS) $(INCLUDE) $(CUOPTS) -dc $< -o $@
 
 tuner:
-	$(CC) $(NVCC_FLAGS) $(CUOPTS) -DTUNER $(SRC) -o $(EXE) $(INCLUDE) -L$(LIB) -lcudart --cudart shared
+	$(CC) $(GENCODE_ARCH) $(NVCC_FLAGS) $(CUOPTS) -DTUNER $(SRC) -o $(EXE) $(INCLUDE) -L$(LIB) -lcudart --cudart shared
 	mv $(EXE) $(BIN_DIR)
 
 clean:
