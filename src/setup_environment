@@ -150,6 +150,21 @@ if [ $CUDA_VERSION_MAJOR -gt 12 ]; then
     export MAKE_ARGS="$MAKE_ARGS GENCODE_SM62="
     export MAKE_ARGS="$MAKE_ARGS GENCODE_SM70="
     export MAKE_ARGS="$MAKE_ARGS GENCODE_SM72="
+    # Retire the stale sm_75 slot too; per-target native arch is carried by GENCODE_ARCH below.
+    export MAKE_ARGS="$MAKE_ARGS GENCODE_SM75="
+fi
+
+# Per-target native arch: each GPU builds + calibrates its own arch (even same sm_XX across GPUs,
+# e.g. H100/H200, is built and calibrated separately and sim configs are not shared). Auto-detect the
+# local GPU's compute capability into TARGET_SM (override by exporting TARGET_SM before sourcing).
+# GENCODE_ARCH carries the single target-arch gencode and is threaded to every suite via MAKE_ARGS;
+# suite makefiles reference $(GENCODE_ARCH).
+if [ -z "$TARGET_SM" ]; then
+    export TARGET_SM=$(nvidia-smi --query-gpu=compute_cap --format=csv,noheader 2>/dev/null | head -1 | tr -d '.')
+fi
+if [ -n "$TARGET_SM" ]; then
+    export GENCODE_ARCH="-gencode=arch=compute_${TARGET_SM},code=sm_${TARGET_SM}"
+    export MAKE_ARGS="$MAKE_ARGS GENCODE_ARCH=$GENCODE_ARCH"
 fi
 
 if [ $CUDA_VERSION_MAJOR -lt 5 ]; then
