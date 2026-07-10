@@ -129,11 +129,10 @@ GPU_Microbenchmark_gmma:
 	mv cuda/GPU_Microbenchmark/bin/* $(BINDIR)/$(BINSUBDIR)/
 
 
+# Huerta only uses gemm_bench-tencore; conv/rnn need cuDNN (not installed), so build gemm subset only.
 Deepbench_nvidia:
-	$(SETENV) $(MAKE) $(MAKE_ARGS) -C cuda/DeepBench/code/nvidia
-	cp -r cuda/DeepBench/code/nvidia/bin/conv_bench* $(BINDIR)/$(BINSUBDIR)/
+	$(SETENV) $(MAKE) $(MAKE_ARGS) -C cuda/DeepBench/code/nvidia gemm
 	cp -r cuda/DeepBench/code/nvidia/bin/gemm_bench* $(BINDIR)/$(BINSUBDIR)/
-	cp -r cuda/DeepBench/code/nvidia/bin/rnn_bench* $(BINDIR)/$(BINSUBDIR)/
 
 ###################################################################################################3
 #pagerank and bc does not work with SM_10 because they need atomic_add
@@ -515,7 +514,7 @@ cutlass_gemm_nn:
 		git clone https://github.com/NVIDIA/cutlass.git cutlass-bench && \
 		( cd cutlass-bench && git checkout e51efbfe18fe4f4cbb66ab814c55bf4aa0185491 ); \
 	fi
-	$(CUDA_INSTALL_PATH)/bin/nvcc -arch=sm_75 -std=c++17 -I cuda/cutlass-bench/include -I cuda/cutlass-bench/tools/util/include cuda/cutlass_trace/cutlass_gemm_nn.cu -o $(BINDIR)/$(BINSUBDIR)/cutlass_gemm_nn
+	$(CUDA_INSTALL_PATH)/bin/nvcc $(GENCODE_ARCH) -std=c++17 -I cuda/cutlass-bench/include -I cuda/cutlass-bench/tools/util/include cuda/cutlass_trace/cutlass_gemm_nn.cu -o $(BINDIR)/$(BINSUBDIR)/cutlass_gemm_nn
 
 # Maybe we should use submodules for this - but I have heard a lot of horor stories about these..
 # For now - lets just clone if we don't have it and set the SHA we want.

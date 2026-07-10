@@ -27,8 +27,8 @@ all: gemm conv rnn
 
 gemm:
 	$(MKDIR) $(BIN_DIR) 
-	$(CUDA_PATH)/bin/$(NVCC) gemm_bench.cu -DUSE_TENSOR_CORES=0 -DPAD_KERNELS=$(PAD_KERNELS) -o $(BIN_DIR)/gemm_bench -I $(KERNELS_DIR) -I $(CUDA_PATH)/include -L $(BLAS_PATH) -l$(BLAS_LIBRARY) -L $(CUDA_LIB64) -lcurand $(CUDA_CPPFLAGS) -std=c++17
-	$(CUDA_PATH)/bin/$(NVCC) gemm_bench.cu -DUSE_TENSOR_CORES=1 -DPAD_KERNELS=$(PAD_KERNELS) -o $(BIN_DIR)/gemm_bench-tencore -I $(KERNELS_DIR) -I $(CUDA_PATH)/include -L $(BLAS_PATH) -l$(BLAS_LIBRARY) -L $(CUDA_LIB64) -lcurand $(CUDA_CPPFLAGS) 
+	$(CUDA_PATH)/bin/$(NVCC) gemm_bench.cu -DUSE_TENSOR_CORES=0 -DPAD_KERNELS=$(PAD_KERNELS) -o $(BIN_DIR)/gemm_bench -I $(KERNELS_DIR) -I $(CUDA_PATH)/include -L $(BLAS_PATH) -l$(BLAS_LIBRARY) -L $(CUDA_LIB64) -lcurand -ldl $(GENCODE_ARCH) $(CUDA_CPPFLAGS) -std=c++17
+	$(CUDA_PATH)/bin/$(NVCC) gemm_bench.cu -DUSE_TENSOR_CORES=1 -DPAD_KERNELS=$(PAD_KERNELS) -o $(BIN_DIR)/gemm_bench-tencore -I $(KERNELS_DIR) -I $(CUDA_PATH)/include -L $(BLAS_PATH) -l$(BLAS_LIBRARY) -L $(CUDA_LIB64) -lcurand -ldl $(GENCODE_ARCH) $(CUDA_CPPFLAGS) 
 
 conv:
 	$(MKDIR) $(BIN_DIR)
