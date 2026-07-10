@@ -23,8 +23,11 @@
 #define GPU_DEVICE 0
 
 /* Problem size. */
-#define NX 4096
-#define NY 4096
+/* v2 采集放大(2026-07-10):grid = NX/DIM_THREAD_BLOCK_X(256)。原 4096→grid16 太小;
+   NX=131072→atax_kernel1 grid=512(落 3060Ti 目标区间);NY 保持小(256)令 A=NX*NY 内存(128MB)
+   与 trace 规模(work=NX*NY≈33.5M load)可控,不爆(NY 也大则 A/trace 巨)。tall-skinny mem-bound mat-vec。 */
+#define NX 131072
+#define NY 256
 
 /* Thread block dimensions */
 #define DIM_THREAD_BLOCK_X 256
@@ -43,9 +46,12 @@ void init_array(DATA_TYPE *x, DATA_TYPE *A)
 {
 	int i, j;
 
+	/* x 是长度 NY 的输入向量;原代码在 i<NX 循环里写 x[i] 是潜伏越界 bug(NX==NY 时掩盖,NX≠NY 崩)。 */
+	for (i = 0; i < NY; i++)
+		x[i] = i * M_PI;
+
 	for (i = 0; i < NX; i++)
 	{
-		x[i] = i * M_PI;
 		for (j = 0; j < NY; j++)
 		{
 			A[i*NY + j] = ((DATA_TYPE) i*(j)) / NX;
@@ -167,7 +173,7 @@ void ataxGpu(DATA_TYPE* A, DATA_TYPE* x, DATA_TYPE* y, DATA_TYPE* tmp, DATA_TYPE
 	t_end = rtclock();
 	fprintf(stdout, "GPU Runtime: %0.6lfs\n", t_end - t_start);
 	
-	cudaMemcpy(y_outputFromGpu, y_gpu, sizeof(DATA_TYPE) * NX, cudaMemcpyDeviceToHost);
+	cudaMemcpy(y_outputFromGpu, y_gpu, sizeof(DATA_TYPE) * NY, cudaMemcpyDeviceToHost);  /* y 长 NY;原为 NX 是潜伏越界 bug(NX==NY 掩盖) */
 
 	cudaFree(A_gpu);
 	cudaFree(x_gpu);
