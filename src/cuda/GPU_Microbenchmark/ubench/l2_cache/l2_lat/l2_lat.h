@@ -9,14 +9,13 @@
 #include <stdlib.h>
 
 #include <cuda.h>
-#define ITERS 32768        //iterate over the array ITERS times
-#define ARRAY_SIZE 4096
 
 #include "../../../hw_def/hw_def.h"
 
 
 __global__ void l2_hit_lat(uint32_t *startClk, uint32_t *stopClk,
-                           uint64_t *posArray, uint64_t *dsink) {
+                           uint64_t *posArray, uint64_t *dsink,
+                           unsigned ARRAY_SIZE, uint32_t ITERS) {
 
   // thread index
   uint32_t tid = threadIdx.x;
@@ -84,8 +83,15 @@ int l2_hit_lat(int argc,char * argv[]) {
   config.THREADS_PER_BLOCK = 1;
   config.TOTAL_THREADS = config.THREADS_PER_BLOCK * config.BLOCKS_NUM;
 
-  // Array size must not exceed L2 size
-  assert(ARRAY_SIZE * sizeof(uint64_t) < config.L2_SIZE);
+  // ARRAY_SIZE = pointer-chase 数组(cg modifier → L2);--fp 扫过 L2 → 溢出到 DRAM,出 L2→DRAM 延迟曲线。
+  unsigned ARRAY_SIZE = 4096;   // 默认 < L2
+  uint32_t ITERS = 32768;
+  if (config.FOOTPRINT_MULT > 0.0) {
+    ARRAY_SIZE = (unsigned)fp_elems(config.L2_SIZE, sizeof(uint64_t));
+    ITERS = ARRAY_SIZE * 4;     // 保证 chase 走遍整个数组
+  } else {
+    assert(ARRAY_SIZE * sizeof(uint64_t) < config.L2_SIZE); // 默认必须 < L2
+  }
 
 
   uint32_t *startClk = (uint32_t *)malloc(config.TOTAL_THREADS * sizeof(uint32_t));
@@ -103,7 +109,7 @@ int l2_hit_lat(int argc,char * argv[]) {
   gpuErrchk(cudaMalloc(&dsink_g, config.TOTAL_THREADS * sizeof(uint64_t)));
 
   l2_hit_lat<<<config.BLOCKS_NUM, config.THREADS_PER_BLOCK>>>(startClk_g, stopClk_g, posArray_g,
-                                       dsink_g);
+                                       dsink_g, ARRAY_SIZE, ITERS);
   gpuErrchk(cudaPeekAtLastError());
 
   gpuErrchk(cudaMemcpy(startClk, startClk_g, config.TOTAL_THREADS * sizeof(uint32_t),

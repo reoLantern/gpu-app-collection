@@ -44,8 +44,18 @@ struct GpuConfig
 
     unsigned FBP_COUNT = 0;           // Frame Buffer Partitions
     unsigned L2_BANKS = 0;            // L2 Cache Banks (LTCs)
+
+    double FOOTPRINT_MULT = 0.0;      // --fp <mult>: 多 size 扫描的 footprint 倍数(×L1 或 ×L2,按探针);
+                                      // 0 = 用探针默认 footprint(不改原行为)
 };
 inline GpuConfig config;
+// --fp footprint helper:返回 FOOTPRINT_MULT × cache_bytes / elem_bytes 的元素数(多 size 扫描;
+// 仅 FOOTPRINT_MULT>0 时调用有意义)。各探针拿它当自己的 footprint knob(array_size 或反推 repeat)。
+inline size_t fp_elems(size_t cache_bytes, size_t elem_bytes)
+{
+    size_t n = (size_t)(config.FOOTPRINT_MULT * (double)cache_bytes / (double)elem_bytes);
+    return n < 2 ? 2 : n;
+}
 // Parses short flags like --sm 80 into a GpuConfig object
 inline void parseGpuConfigArgs(int argc, char *argv[])
 {
@@ -101,6 +111,9 @@ inline void parseGpuConfigArgs(int argc, char *argv[])
             config.BLOCKS_NUM = to_uint(val);
         else if (flag == "--total")
             config.TOTAL_THREADS = to_uint(val);
+
+        else if (flag == "--fp")   // footprint 倍数(×cache):多 size 扫描,各探针按自己的 knob 换算
+            config.FOOTPRINT_MULT = std::stod(val);
 
         else
             continue;

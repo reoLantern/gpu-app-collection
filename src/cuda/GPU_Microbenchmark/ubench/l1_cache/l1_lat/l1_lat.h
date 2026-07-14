@@ -101,7 +101,15 @@ float l1_lat(int argc, char *argv[])
     }
   }
 
-  assert(array_size * sizeof(uint64_t) < L1_SIZE);
+  // --fp <mult>: footprint = mult × L1_SIZE(pointer-chase 数组,ca modifier 命中 L1/溢出到 L2/DRAM
+  //   → 一条探针扫出完整 L1→L2→DRAM 延迟平台曲线);repeat_times 随 array_size 放大,保证 chase
+  //   走遍整个数组(miss 在目标层显现)。FP=0 时保持默认行为 + 原断言。
+  if (config.FOOTPRINT_MULT > 0.0) {
+    array_size = (uint32_t)fp_elems(L1_SIZE, sizeof(uint64_t));
+    repeat_times = array_size * 4;  // 保证 chase 走遍整个数组(miss 在目标层显现)
+  } else {
+    assert(array_size * sizeof(uint64_t) < L1_SIZE);
+  }
 
   uint32_t *startClk = (uint32_t *)malloc(THREADS_NUM * sizeof(uint32_t));
   uint32_t *stopClk = (uint32_t *)malloc(THREADS_NUM * sizeof(uint32_t));

@@ -73,6 +73,9 @@ int main(int argc, char *argv[])
 
   // Array size has to exceed L2 size to avoid L2 cache residence
   unsigned ARRAY_SIZE = (config.L2_SIZE / sizeof(float)) * 2;
+  // --fp <mult>: footprint = mult × L2_SIZE(流式带宽 vs 工作集曲线:<1 L2 驻留、>1 溢出到 DRAM)
+  if (config.FOOTPRINT_MULT > 0.0)
+    ARRAY_SIZE = (unsigned)fp_elems(config.L2_SIZE, sizeof(float));
 
 
   uint32_t *startClk = (uint32_t *)malloc(config.TOTAL_THREADS * sizeof(uint32_t));

@@ -14,12 +14,11 @@
 
 #define REPEAT_TIMES 4096
 #include "../../../hw_def/hw_def.h"
-// array size is half the L1 size (2) * float size (4)
-#define ARRAY_SIZE 16384   // ARRAY_SIZE has to be less than L1_SIZE
+// footprint = ARRAY_SIZE floats(默认 < L1);--fp 扫过 L1 → 溢出到 L2(L1→L2 带宽曲线)。运行时传入。
 
 __global__ void l1_bw(uint64_t *__restrict__ startClk,
                       uint64_t *__restrict__ stopClk, float *__restrict__ dsink,
-                      const float *__restrict__ posArray)
+                      const float *__restrict__ posArray, unsigned ARRAY_SIZE)
 {
 
   // thread index
@@ -92,11 +91,16 @@ int main(int argc, char *argv[])
 
   initializeDeviceProp(0, argc, argv);
 
-  assert(ARRAY_SIZE * sizeof(float) <
-         L1_SIZE); // ARRAY_SIZE has to be less than L1_SIZE
+  unsigned ARRAY_SIZE = 16384;  // 默认 < L1
+  if (config.FOOTPRINT_MULT > 0.0)
+    ARRAY_SIZE = (unsigned)fp_elems(L1_SIZE, sizeof(float));
+  else
+    assert(ARRAY_SIZE * sizeof(float) <
+           L1_SIZE); // 默认 ARRAY_SIZE 必须 < L1
+  const unsigned ALLOC_SIZE = ARRAY_SIZE + 128; // +128 float 余量:steady-state 读越过 modulo 索引 +384B
   uint64_t *startClk = (uint64_t *)malloc(config.TOTAL_THREADS * sizeof(uint64_t));
   uint64_t *stopClk = (uint64_t *)malloc(config.TOTAL_THREADS * sizeof(uint64_t));
-  float *posArray = (float *)malloc(ARRAY_SIZE * sizeof(float));
+  float *posArray = (float *)malloc(ALLOC_SIZE * sizeof(float));
   float *dsink = (float *)malloc(config.TOTAL_THREADS * sizeof(float));
 
   uint64_t *startClk_g;
@@ -109,14 +113,14 @@ int main(int argc, char *argv[])
 
   gpuErrchk(cudaMalloc(&startClk_g, config.TOTAL_THREADS * sizeof(uint64_t)));
   gpuErrchk(cudaMalloc(&stopClk_g, config.TOTAL_THREADS * sizeof(uint64_t)));
-  gpuErrchk(cudaMalloc(&posArray_g, ARRAY_SIZE * sizeof(float)));
+  gpuErrchk(cudaMalloc(&posArray_g, ALLOC_SIZE * sizeof(float)));
   gpuErrchk(cudaMalloc(&dsink_g, config.TOTAL_THREADS * sizeof(float)));
 
   gpuErrchk(cudaMemcpy(posArray_g, posArray, ARRAY_SIZE * sizeof(float),
                        cudaMemcpyHostToDevice));
 
   l1_bw<<<config.BLOCKS_NUM, config.THREADS_PER_BLOCK>>>(startClk_g, stopClk_g, dsink_g,
-                                                         posArray_g);
+                                                         posArray_g, ARRAY_SIZE);
   gpuErrchk(cudaPeekAtLastError());
 
   gpuErrchk(cudaMemcpy(startClk, startClk_g, config.TOTAL_THREADS * sizeof(uint64_t),
