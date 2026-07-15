@@ -102,11 +102,11 @@ float l1_lat(int argc, char *argv[])
   }
 
   // --fp <mult>: footprint = mult × L1_SIZE(pointer-chase 数组,ca modifier 命中 L1/溢出到 L2/DRAM
-  //   → 一条探针扫出完整 L1→L2→DRAM 延迟平台曲线);repeat_times 随 array_size 放大,保证 chase
-  //   走遍整个数组(miss 在目标层显现)。FP=0 时保持默认行为 + 原断言。
+  //   → 一条探针扫出 L1→L2→DRAM 延迟平台曲线)。★只放大 array_size 定 footprint,repeat_times 保持
+  //   默认、不随数组放大:命中/未命中由 footprint vs cache(init 预热 + 逐出)决定、不由迭代数决定,
+  //   迭代数只控采样次数;若也放大迭代数,大数组会让 trace/sim 周期爆到不可跑。FP=0 时保持默认 + 原断言。
   if (config.FOOTPRINT_MULT > 0.0) {
     array_size = (uint32_t)fp_elems(L1_SIZE, sizeof(uint64_t));
-    repeat_times = array_size * 4;  // 保证 chase 走遍整个数组(miss 在目标层显现)
   } else {
     assert(array_size * sizeof(uint64_t) < L1_SIZE);
   }

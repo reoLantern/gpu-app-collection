@@ -14,7 +14,11 @@
 
 #define REPEAT_TIMES 4096
 #include "../../../hw_def/hw_def.h"
-// footprint = ARRAY_SIZE floats(默认 < L1);--fp 扫过 L1 → 溢出到 L2(L1→L2 带宽曲线)。运行时传入。
+// 单点 L1 带宽探针(ARRAY_SIZE floats < L1,ca modifier 命中 L1)。
+// ★不做 --fp 多 size:本探针自报带宽用 max(所有线程 stopClk)−min(所有线程 startClk),这个跨线程 max/min
+//   在多波次卡(如 3060Ti,BLOCKS_NUM>SM)上会横跨所有波次 → 自报带宽失真(★默认单点亦然、非 --fp 引入,
+//   pre-existing,#115 待查)。带宽的 footprint 扫描由 mem_bw 承担(计时只用线程 0 单 SM 时钟、不受影响)。
+//   本探针只作单点 L1-stress kernel、经 sim/HW 周期(gpc__cycles_elapsed)对比进 MAPE,不用它自报的带宽数。
 
 __global__ void l1_bw(uint64_t *__restrict__ startClk,
                       uint64_t *__restrict__ stopClk, float *__restrict__ dsink,
@@ -91,12 +95,8 @@ int main(int argc, char *argv[])
 
   initializeDeviceProp(0, argc, argv);
 
-  unsigned ARRAY_SIZE = 16384;  // 默认 < L1
-  if (config.FOOTPRINT_MULT > 0.0)
-    ARRAY_SIZE = (unsigned)fp_elems(L1_SIZE, sizeof(float));
-  else
-    assert(ARRAY_SIZE * sizeof(float) <
-           L1_SIZE); // 默认 ARRAY_SIZE 必须 < L1
+  unsigned ARRAY_SIZE = 16384;  // < L1(单点 L1 带宽;--fp 多 size 已移除,见文件头注释)
+  assert(ARRAY_SIZE * sizeof(float) < L1_SIZE);
   const unsigned ALLOC_SIZE = ARRAY_SIZE + 128; // +128 float 余量:steady-state 读越过 modulo 索引 +384B
   uint64_t *startClk = (uint64_t *)malloc(config.TOTAL_THREADS * sizeof(uint64_t));
   uint64_t *stopClk = (uint64_t *)malloc(config.TOTAL_THREADS * sizeof(uint64_t));

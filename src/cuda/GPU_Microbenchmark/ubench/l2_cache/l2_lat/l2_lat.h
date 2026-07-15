@@ -86,9 +86,11 @@ int l2_hit_lat(int argc,char * argv[]) {
   // ARRAY_SIZE = pointer-chase 数组(cg modifier → L2);--fp 扫过 L2 → 溢出到 DRAM,出 L2→DRAM 延迟曲线。
   unsigned ARRAY_SIZE = 4096;   // 默认 < L2
   uint32_t ITERS = 32768;
+  // ★只放大 ARRAY_SIZE 定 footprint,ITERS 保持默认、不随数组放大:命中/未命中由 footprint vs L2
+  //   (init 预热 + 逐出)决定、不由迭代数决定,迭代数只控采样次数;若也放大 ITERS,L2 尺寸数组会让
+  //   trace/sim 爆到十亿周期不可跑。保持 ITERS=32768 → 各 footprint sim 周期 ~7-10M、与默认单点同量级。
   if (config.FOOTPRINT_MULT > 0.0) {
     ARRAY_SIZE = (unsigned)fp_elems(config.L2_SIZE, sizeof(uint64_t));
-    ITERS = ARRAY_SIZE * 4;     // 保证 chase 走遍整个数组
   } else {
     assert(ARRAY_SIZE * sizeof(uint64_t) < config.L2_SIZE); // 默认必须 < L2
   }
